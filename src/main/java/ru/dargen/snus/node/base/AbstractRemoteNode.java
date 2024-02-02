@@ -62,7 +62,8 @@ public abstract class AbstractRemoteNode extends AbstractNode<SocketChannel> imp
 
     @Override
     public void close() {
-        super.close();
         frameMessageProcessor.reset();
+        super.close();
     }
+
 }

@@ -344,7 +344,6 @@ public class Buffer {
             buffer = ByteBuffer.allocateDirect(newCapacity)
                     .put(buffer.position(0)) //copy old
                     .clear();
-            throw new RuntimeException();
         }
     }
 
