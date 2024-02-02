@@ -2,7 +2,6 @@ package ru.dargen.snus.eventloop.factory;
 
 import lombok.RequiredArgsConstructor;
 import ru.dargen.snus.eventloop.EventLoop;
-import ru.dargen.snus.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.ThreadFactory;
 
