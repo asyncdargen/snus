@@ -10,10 +10,6 @@ public abstract class ThreadEventLoopFactory implements EventLoopFactory {
 
     private final ThreadFactory threadFactory;
 
-    public ThreadEventLoopFactory(String threadName) {
-        this(NamedThreadFactory.create(threadName, true));
-    }
-
     protected abstract EventLoop createNew();
 
     @Override
