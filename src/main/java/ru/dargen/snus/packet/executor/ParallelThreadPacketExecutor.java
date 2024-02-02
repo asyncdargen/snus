@@ -3,7 +3,6 @@ package ru.dargen.snus.packet.executor;
 import lombok.RequiredArgsConstructor;
 import ru.dargen.snus.node.RemoteNode;
 import ru.dargen.snus.packet.Packet;
-import ru.dargen.snus.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -12,7 +11,7 @@ import java.util.concurrent.ThreadFactory;
 @RequiredArgsConstructor
 public class ParallelThreadPacketExecutor implements PacketExecutor {
 
-    public final static ThreadFactory THREAD_FACTORY = NamedThreadFactory.create("Packet-Executor-Thread-%s", true);
+    public final static ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Packet-Executor-Thread-", 0).factory();
 
     private final Executor executor;
 

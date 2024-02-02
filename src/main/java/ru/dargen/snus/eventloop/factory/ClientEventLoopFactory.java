@@ -2,14 +2,13 @@ package ru.dargen.snus.eventloop.factory;
 
 import ru.dargen.snus.eventloop.ClientEventLoop;
 import ru.dargen.snus.eventloop.EventLoop;
-import ru.dargen.snus.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.ThreadFactory;
 
 public class ClientEventLoopFactory extends ThreadEventLoopFactory {
 
     public static EventLoopFactory INSTANCE = new ClientEventLoopFactory(
-            NamedThreadFactory.create("Client-Event-Loop-Thread-%s", true)
+            Thread.ofVirtual().name("Client-Event-Loop-Thread-%s", 0).factory()
     );
 
     public ClientEventLoopFactory(ThreadFactory threadFactory) {
