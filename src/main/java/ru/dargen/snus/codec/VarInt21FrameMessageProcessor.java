@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 
 @Getter
@@ -26,21 +25,14 @@ public class VarInt21FrameMessageProcessor {
 
     protected final RemoteNode node;
 
-    protected final Queue<Consumer<Buffer>> queue = new ArrayDeque<>();
+    protected final Queue<Packet> queue = new ArrayDeque<>();
     private ByteBuffer remainingFrame;
 
-    public void enqueue(Consumer<Buffer> writer) {
-        synchronized (queue) {
-            queue.add(writer);
-        }
-    }
-
-//    public void enqueue(Buffer buffer) {
-//        enqueue(out -> out.writeBuffer(out));
-//    }
 
     public void enqueue(Packet packet) {
-        enqueue(out -> PacketProcessor.processOutPacket(node, packet, out));
+        synchronized (queue) {
+            queue.add(packet);
+        }
     }
 
     public void write() throws IOException {
@@ -48,12 +40,18 @@ public class VarInt21FrameMessageProcessor {
             if (queue.isEmpty()) return;
             try (var holder = node.configuration().bufferPool().acquire()) {
                 var buffer = holder.buffer();
-                queue.drain(frame -> {
+                queue.drain(packet -> {
                     var startIndex = buffer.shiftWrite(4);
                     try {
-                        frame.accept(buffer);
+                        PacketProcessor.processOutPacket(node, packet, buffer);
 
                         var length = buffer.writeIndex() - startIndex - 4;
+
+                        if (length == 0) {
+                            buffer.writeIndex(startIndex);
+                            return;
+                        }
+
                         buffer.writeIndex(startIndex);
                         buffer.writeInt(length);
                         buffer.shiftWrite(length);

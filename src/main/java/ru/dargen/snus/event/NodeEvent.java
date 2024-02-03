@@ -10,8 +10,8 @@ import ru.dargen.snus.node.Node;
 @RequiredArgsConstructor
 public abstract class NodeEvent {
 
-    private final Node<?> node;
-    private boolean cancelled;
+    protected final Node<?> node;
+    protected boolean cancelled;
 
     public void cancel() {
         setCancelled(true);

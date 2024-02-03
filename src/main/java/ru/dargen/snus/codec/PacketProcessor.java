@@ -3,6 +3,8 @@ package ru.dargen.snus.codec;
 import lombok.experimental.UtilityClass;
 import ru.dargen.snus.buffer.Buffer;
 import ru.dargen.snus.codec.exception.ProcessPacketException;
+import ru.dargen.snus.event.packet.PacketReceiveEvent;
+import ru.dargen.snus.event.packet.PacketSendEvent;
 import ru.dargen.snus.node.RemoteNode;
 import ru.dargen.snus.packet.Packet;
 
@@ -37,7 +39,20 @@ public class PacketProcessor {
             throw new ProcessPacketException("Error while packet read %s".formatted(packetTypeId), t);
         }
 
-        if (node.callbackProvider().completeCallback(packet) ) {
+        if (node.events().hasHandlers(PacketReceiveEvent.class)) {
+            var event = node.events().fire(new PacketReceiveEvent(node, packet));
+            if (event.isCancelled()) {
+                return;
+            }
+
+            packet = event.getPacket();
+        }
+
+        if (packet == null) {
+            throw new ProcessPacketException("Packet null");
+        }
+
+        if (node.callbackProvider().completeCallback(packet)) {
             return;
         }
 
@@ -47,6 +62,19 @@ public class PacketProcessor {
     }
 
     public void processOutPacket(RemoteNode node, Packet packet, Buffer out) {
+        if (node.events().hasHandlers(PacketSendEvent.class)) {
+            var event = node.events().fire(new PacketSendEvent(node, packet));
+            if (event.isCancelled()) {
+                return;
+            }
+
+            packet = event.getPacket();
+        }
+
+        if (packet == null) {
+            throw new ProcessPacketException("Packet null");
+        }
+
         var packetTypeId = node.packetRegistry().getPacketId(packet);
 
         if (packetTypeId == -1) {

@@ -19,12 +19,30 @@ public class NodeEventBus {
                 .add((Consumer<NodeEvent>) handler);
     }
 
+    public void unregister(Class<? extends NodeEvent> eventClass, Consumer<?> handler) {
+        var handlerSet = handlers.get(eventClass);
+
+        if (handlerSet == null) {
+            return;
+        }
+
+        handlerSet.remove(handler);
+
+        if (handlerSet.isEmpty()) {
+            handlers.remove(eventClass);
+        }
+    }
+
+    public void unregisterAll(Class<? extends NodeEvent> eventClass) {
+        handlers.remove(eventClass);
+    }
+
     public <E extends NodeEvent> Set<Consumer<E>> getHandlers(Class<E> eventClass) {
         return (Set<Consumer<E>>) (Object) handlers.getOrDefault(eventClass, java.util.Collections.emptySet());
     }
 
     public boolean hasHandlers(Class<? extends NodeEvent> eventClass) {
-        return handlers.containsKey(eventClass);
+        return handlers.containsKey(eventClass) && !handlers.get(eventClass).isEmpty();
     }
 
     public <E extends NodeEvent> E fire(E event) {
