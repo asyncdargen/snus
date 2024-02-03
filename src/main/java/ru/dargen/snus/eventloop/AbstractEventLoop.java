@@ -65,52 +65,66 @@ public abstract class AbstractEventLoop implements EventLoop, CycledRunnable {
                 forceLoop = false;
             }
 
-            try {
-                synchronized (tasks) {
-                    tasks.drain(Runnable::run);
-                }
-            } catch (Throwable t) {
-                Snus.LOGGER.log(Level.SEVERE, "Error while loop tasks", t);
-            }
+            executeTasks();
 
             if (isShutdown) {
-                if (shutdownFuture != null) {
-                    shutdownFuture.complete(null);
-                }
-
-                Thread.currentThread().interrupt();
-                selector.close();
+                shutdownFinally();
                 return;
             }
 
-            for (Node<?> node : nodes) {
-                if (!node.isAlive()) {
-                    node.closeSafe();
-                }
-            }
-
-            selector.selectNow(key -> {
-                var node = (Node<?>) key.attachment();
-                try {
-                    if (!node.channel().isOpen()) {
-                        throw new IOException("Node channel closed");
-                    }
-
-                    select(key, (Node<?>) key.attachment());
-                } catch (IOException e) {
-                    node.closeSafe();
-                } catch (Throwable t) {
-                    Snus.LOGGER.log(Level.SEVERE, "Error while key select %s".formatted(node), t);
-                    node.closeSafe();
-                }
-            });
+            cleanupNodes();
+            selectKeys();
 
             inLoop();
         } catch (Throwable t) {
-            Snus.LOGGER.log(Level.SEVERE, "Error while loop", t);
+            logError("Error while loop", t);
         }
     }
 
+    protected void executeTasks() {
+        synchronized (tasks) {
+            tasks.drain(Runnable::run);
+        }
+    }
+
+    @SneakyThrows
+    protected void shutdownFinally() {
+        if (shutdownFuture != null) {
+            shutdownFuture.complete(null);
+        }
+        Thread.currentThread().interrupt();
+        selector.close();
+    }
+
+    protected void cleanupNodes() {
+        for (Node<?> node : nodes) {
+            if (!node.isAlive()) {
+                node.closeSafe();
+            }
+        }
+    }
+
+    @SneakyThrows
+    protected void selectKeys() {
+        selector.selectNow(key -> {
+            var node = (Node<?>) key.attachment();
+            try {
+                if (!node.channel().isOpen()) {
+                    throw new IOException("Node channel closed");
+                }
+                select(key, (Node<?>) key.attachment());
+            } catch (IOException e) {
+                node.closeSafe();
+            } catch (Throwable t) {
+                logError("Error while key select %s".formatted(node), t);
+                node.closeSafe();
+            }
+        });
+    }
+
+    private void logError(String message, Throwable t) {
+        Snus.LOGGER.log(Level.SEVERE, message, t);
+    }
     @Override
     public int size() {
         return nodes.size();

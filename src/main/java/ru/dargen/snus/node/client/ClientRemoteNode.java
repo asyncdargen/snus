@@ -67,12 +67,12 @@ public class ClientRemoteNode extends AbstractRemoteNode implements ClientNode {
             channel = NioUtil.openChannel();
             channel.connect(address);
         } catch (Throwable t) {
-            Snus.LOGGER.log(Level.SEVERE, "Error while client connecting %s".formatted(getSocketAddress()), t);
+            Snus.LOGGER.log(Level.SEVERE, "Error while connecting %s".formatted(getSocketAddress()), t);
             closeSafe();
             return;
         }
 
-        Snus.LOGGER.info("Client successful connected to %s".formatted(getSocketAddress()));
+        Snus.LOGGER.info("Successful connected to %s".formatted(getSocketAddress()));
 
         if (!events().fireResult(new ClientConnectEvent(this))) {
             closeSafe();
